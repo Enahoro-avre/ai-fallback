@@ -1,6 +1,18 @@
 # ai-fallback
 
+<p align="center">
+  <img src="./assets/demo.svg" alt="ai-fallback before/after example" width="700">
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/@enahoro/ai-fallback"><img src="https://img.shields.io/npm/v/@enahoro/ai-fallback.svg" alt="npm version"></a>
+  <a href="https://github.com/enahoro/ai-fallback/actions/workflows/ci.yml"><img src="https://github.com/enahoro/ai-fallback/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/npm/l/@enahoro/ai-fallback.svg" alt="license"></a>
+</p>
+
 Try multiple LLM providers in order. Falls through on error, rate limit, or timeout — returns the first success.
+
+Requires Node 18+.
 
 ```bash
 npm install @enahoro/ai-fallback
@@ -37,6 +49,84 @@ const res = await fallback(
     onAttempt: (a) => console.log(`[${a.label}] ${a.ok ? "ok" : "fail"} in ${a.durationMs}ms`),
   }
 );
+```
+
+## Real-world example
+
+A typical Next.js API route calling one provider directly:
+
+```ts
+// app/api/chat/route.ts — BEFORE
+import OpenAI from "openai";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+
+  try {
+    const completion = await openai.chat.completions.create({ model: "gpt-4o", messages });
+    return Response.json({ reply: completion.choices[0].message.content });
+  } catch (error) {
+    // One provider, one failure mode, one dead endpoint.
+    return Response.json({ error: "Something went wrong" }, { status: 500 });
+  }
+}
+```
+
+The same route with `fallback()` — the OpenAI and Claude calls themselves are untouched,
+only the wrapping changes:
+
+```ts
+// app/api/chat/route.ts — AFTER
+import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
+import { fallback, retryableOnly, FallbackError } from "@enahoro/ai-fallback";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+
+  try {
+    const reply = await fallback(
+      [
+        {
+          label: "openai",
+          retries: 1,
+          call: async () => {
+            const c = await openai.chat.completions.create({ model: "gpt-4o", messages });
+            return c.choices[0].message.content;
+          },
+        },
+        {
+          label: "claude",
+          call: async () => {
+            const c = await anthropic.messages.create({
+              model: "claude-sonnet-4-6",
+              max_tokens: 1000,
+              messages,
+            });
+            return c.content[0].type === "text" ? c.content[0].text : "";
+          },
+        },
+      ],
+      {
+        timeoutMs: 15_000,
+        isRetryable: retryableOnly, // don't waste a fallback hop on a bad API key
+        onFallback: (a) => console.warn(`${a.label} failed, falling back:`, a.error),
+      }
+    );
+
+    return Response.json({ reply });
+  } catch (error) {
+    if (error instanceof FallbackError) {
+      console.error("All providers failed:", error.attempts); // per-provider detail
+    }
+    return Response.json({ error: "Something went wrong" }, { status: 500 });
+  }
+}
 ```
 
 ## Why
@@ -100,6 +190,10 @@ This repo also ships two GitHub Actions workflows:
 - `.github/workflows/ci.yml` — runs the test suite on Node 18/20/22 on every push and PR
 - `.github/workflows/publish.yml` — publishes to npm automatically when you push a `v*` tag
   (set an `NPM_TOKEN` secret in the repo settings first)
+
+## Contributing
+
+Issues and PRs welcome — [open one here](https://github.com/enahoro/ai-fallback/issues).
 
 ## License
 
