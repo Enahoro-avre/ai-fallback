@@ -1,0 +1,45 @@
+{
+  "name": "@enahoro/ai-fallback",
+  "version": "0.1.0",
+  "description": "Try multiple LLM providers in order — fall through on error, rate limit, or timeout.",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "type": "commonjs",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "test": "node --import tsx --test test/*.test.ts",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "llm",
+    "ai",
+    "fallback",
+    "openai",
+    "anthropic",
+    "claude",
+    "gemini",
+    "resilience",
+    "rate-limit"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enahoro/ai-fallback.git"
+  }
+}
