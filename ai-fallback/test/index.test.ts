@@ -15,8 +15,7 @@ test("falls through to next provider on rejection", async () => {
     () => Promise.reject(new Error("rate limited")),
     () => Promise.resolve("from B"),
   ]);
-  assert.equal(result, "from B");
-});
+  assert.equal(result, "from B")});
 
 test("falls through across three providers", async () => {
   const order: string[] = [];

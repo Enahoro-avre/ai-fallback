@@ -1,5 +1,5 @@
 {
-  "name": "@enahoro/ai-fallback",
+  "name": "@enahoro-av/ai-fallback",
   "version": "0.1.0",
   "description": "Try multiple LLM providers in order — fall through on error, rate limit, or timeout.",
   "main": "dist/index.js",
@@ -31,7 +31,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "tsup": "^8.0.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.16.0",
     "typescript": "^5.5.0"
   },
