@@ -1,5 +1,5 @@
 {
-  "name": "@enahoro-av/ai-fallback",
+  "name": "@enahoro-avre/ai-fallback",
   "version": "0.1.0",
   "description": "Try multiple LLM providers in order — fall through on error, rate limit, or timeout.",
   "main": "dist/index.js",
